@@ -5,18 +5,19 @@ import com.prajaavaani.backend.dto.AuthResponse;
 import com.prajaavaani.backend.dto.VerifyOtpRequest;
 import com.prajaavaani.backend.service.AuthService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/auth") // Base path for authentication endpoints
-@RequiredArgsConstructor
-// @CrossOrigin // Add if requests come from a different origin (e.g., frontend dev server)
 public class AuthController {
 
     private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
 
     @PostMapping("/request-otp")
     @ResponseStatus(HttpStatus.ACCEPTED) // Indicate request is accepted, processing happens async

@@ -17,4 +17,11 @@ public class VoteRequest {
 
     @NotNull(message = "Vote type (UPVOTE/DOWNVOTE) must be specified")
     private VoteEntity.VoteType voteType; 
+
+    public UUID getConcernId() {
+        return concernId;
+    }
+    public VoteEntity.VoteType getVoteType() {
+        return voteType;
+    }
 }

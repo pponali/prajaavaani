@@ -5,9 +5,11 @@ com/prajaavaani/backend/dto/VoteRequest.class
 com/prajaavaani/backend/repository/ConcernRepository.class
 com/prajaavaani/backend/dto/ConcernDto.class
 com/prajaavaani/backend/config/JwtAuthenticationFilter.class
+com/prajaavaani/backend/config/OpenApiConfig.class
 com/prajaavaani/backend/dto/AuthRequest.class
 com/prajaavaani/backend/dto/CreateConcernRequest.class
 com/prajaavaani/backend/repository/UserRepository.class
+com/prajaavaani/backend/exception/UserNotFoundException.class
 com/prajaavaani/backend/config/TwilioConfig.class
 com/prajaavaani/backend/dto/AuthResponse.class
 com/prajaavaani/backend/repository/VoteRepository.class
@@ -18,11 +20,15 @@ com/prajaavaani/backend/model/GeographicLevel.class
 com/prajaavaani/backend/PrajaavaaniBackendApplication.class
 com/prajaavaani/backend/model/UserEntity.class
 com/prajaavaani/backend/config/SecurityConfig.class
+com/prajaavaani/backend/exception/OtpSendingFailedException.class
 com/prajaavaani/backend/service/AuthServiceImpl.class
 com/prajaavaani/backend/service/ConcernService.class
 com/prajaavaani/backend/service/OtpService.class
+com/prajaavaani/backend/exception/AuthorNotFoundException.class
 com/prajaavaani/backend/service/AuthService.class
+com/prajaavaani/backend/exception/ConcernNotFoundException.class
 com/prajaavaani/backend/controller/ConcernController.class
 com/prajaavaani/backend/service/JwtService.class
 com/prajaavaani/backend/model/ConcernEntity.class
 com/prajaavaani/backend/model/VoteEntity$VoteType.class
+com/prajaavaani/backend/exception/InvalidOtpException.class

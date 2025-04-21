@@ -23,7 +23,8 @@ public class UserEntity {
     @Column(nullable = false, unique = true, length = 15) // Assuming mobile numbers might include country code later
     private String mobileNumber;
 
-    // Add other fields like name, isVerified, etc. if needed
+    @Column(nullable = false)
+    private Boolean isVerified = false;
 
     @Column(nullable = false, updatable = false)
     @CreationTimestamp // Automatically set on creation
@@ -31,6 +32,22 @@ public class UserEntity {
 
     @UpdateTimestamp // Automatically set on update
     private LocalDateTime updatedAt;
+
+    public String getMobileNumber() {
+        return mobileNumber;
+    }
+    public void setMobileNumber(String mobileNumber) {
+        this.mobileNumber = mobileNumber;
+    }
+    public Boolean getIsVerified() {
+        return isVerified;
+    }
+    public void setIsVerified(Boolean isVerified) {
+        this.isVerified = isVerified;
+    }
+    public UUID getId() {
+        return id;
+    }
 
     // Relationships (e.g., OneToMany with Concerns, Votes) can be added later
 }

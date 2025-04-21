@@ -14,4 +14,12 @@ public class VerifyOtpRequest {
     @NotBlank(message = "OTP code cannot be blank")
     @Size(min = 6, max = 6, message = "OTP code must be 6 digits") // Assuming 6-digit OTP
     private String otpCode;
+
+    public String getMobileNumber() {
+        return mobileNumber;
+    }
+
+    public String getOtpCode() {
+        return otpCode;
+    }
 }

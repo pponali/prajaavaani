@@ -25,4 +25,20 @@ public class CreateConcernRequest {
     @NotBlank(message = "Location identifier cannot be blank")
     @Size(max = 100, message = "Location identifier cannot exceed 100 characters")
     private String locationIdentifier;
+
+    public String getAuthorName() {
+        return authorName;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public GeographicLevel getGeographicLevel() {
+        return geographicLevel;
+    }
+
+    public String getLocationIdentifier() {
+        return locationIdentifier;
+    }
 }

@@ -10,7 +10,6 @@ import com.prajaavaani.backend.model.VoteEntity;
 import com.prajaavaani.backend.repository.ConcernRepository;
 import com.prajaavaani.backend.repository.UserRepository;
 import com.prajaavaani.backend.repository.VoteRepository;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -26,7 +25,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class ConcernServiceImpl implements ConcernService {
 
     private static final Logger log = LoggerFactory.getLogger(ConcernServiceImpl.class);
@@ -34,6 +32,12 @@ public class ConcernServiceImpl implements ConcernService {
     private final ConcernRepository concernRepository;
     private final UserRepository userRepository;
     private final VoteRepository voteRepository;
+
+    public ConcernServiceImpl(ConcernRepository concernRepository, UserRepository userRepository, VoteRepository voteRepository) {
+        this.concernRepository = concernRepository;
+        this.userRepository = userRepository;
+        this.voteRepository = voteRepository;
+    }
 
     @Override
     @Transactional // Ensure atomicity
@@ -48,7 +52,8 @@ public class ConcernServiceImpl implements ConcernService {
         concern.setText(request.getText());
         concern.setGeographicLevel(request.getGeographicLevel());
         concern.setLocationIdentifier(request.getLocationIdentifier());
-        // upvotes/downvotes default to 0
+        // upvotes/downvotes/netVotes default to 0
+        concern.setNetVotes(0);
 
         ConcernEntity savedConcern = concernRepository.save(concern);
         log.info("Created concern with ID: {}", savedConcern.getId());
@@ -100,10 +105,12 @@ public class ConcernServiceImpl implements ConcernService {
                 } else {
                     concern.setDownvotes(concern.getDownvotes() - 1);
                 }
+                // Update netVotes
+                concern.setNetVotes(concern.getUpvotes() - concern.getDownvotes());
                 voteRepository.delete(existingVote);
             } else {
                 // User is changing their vote
-                 log.debug("Changing vote from {} to {} for concern {}", existingVote.getVoteType(), request.getVoteType(), concern.getId());
+                log.debug("Changing vote from {} to {} for concern {}", existingVote.getVoteType(), request.getVoteType(), concern.getId());
                 if (existingVote.getVoteType() == VoteEntity.VoteType.UPVOTE) {
                     concern.setUpvotes(concern.getUpvotes() - 1);
                     concern.setDownvotes(concern.getDownvotes() + 1);
@@ -111,6 +118,8 @@ public class ConcernServiceImpl implements ConcernService {
                     concern.setDownvotes(concern.getDownvotes() - 1);
                     concern.setUpvotes(concern.getUpvotes() + 1);
                 }
+                // Update netVotes
+                concern.setNetVotes(concern.getUpvotes() - concern.getDownvotes());
                 existingVote.setVoteType(request.getVoteType());
                 voteRepository.save(existingVote); // Update existing vote record
             }
@@ -121,12 +130,13 @@ public class ConcernServiceImpl implements ConcernService {
             newVote.setUser(user);
             newVote.setConcern(concern);
             newVote.setVoteType(request.getVoteType());
-            
             if (request.getVoteType() == VoteEntity.VoteType.UPVOTE) {
                 concern.setUpvotes(concern.getUpvotes() + 1);
             } else {
                 concern.setDownvotes(concern.getDownvotes() + 1);
             }
+            // Update netVotes
+            concern.setNetVotes(concern.getUpvotes() - concern.getDownvotes());
             voteRepository.save(newVote);
         }
 
@@ -146,7 +156,7 @@ public class ConcernServiceImpl implements ConcernService {
         dto.setText(entity.getText());
         dto.setUpvotes(entity.getUpvotes());
         dto.setDownvotes(entity.getDownvotes());
-        dto.setNetVotes(entity.getNetVotes()); // Use the transient getter
+        dto.setNetVotes(entity.getNetVotes()); // Use persistent field
         dto.setGeographicLevel(entity.getGeographicLevel());
         dto.setLocationIdentifier(entity.getLocationIdentifier());
         dto.setCreatedAt(entity.getCreatedAt());

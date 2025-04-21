@@ -23,4 +23,23 @@ public class TwilioConfig {
 
     // Optional: Add messagingServiceSid if you prefer using that
     // private String messagingServiceSid;
+
+    public String getAccountSid() {
+        return accountSid;
+    }
+    public void setAccountSid(String accountSid) {
+        this.accountSid = accountSid;
+    }
+    public String getAuthToken() {
+        return authToken;
+    }
+    public void setAuthToken(String authToken) {
+        this.authToken = authToken;
+    }
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
 }

@@ -8,7 +8,6 @@ import com.prajaavaani.backend.model.UserEntity; // Import UserEntity
 import com.prajaavaani.backend.repository.UserRepository; // Import UserRepository
 import com.prajaavaani.backend.service.ConcernService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -23,12 +22,16 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/concerns") // Base path for concern-related endpoints
-@RequiredArgsConstructor
 // @CrossOrigin
 public class ConcernController {
 
     private final ConcernService concernService;
     private final UserRepository userRepository; // Inject UserRepository
+
+    public ConcernController(ConcernService concernService, UserRepository userRepository) {
+        this.concernService = concernService;
+        this.userRepository = userRepository;
+    }
 
     @PostMapping
     public ResponseEntity<ConcernDto> createConcern(

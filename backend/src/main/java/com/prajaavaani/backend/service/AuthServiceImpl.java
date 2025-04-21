@@ -3,26 +3,32 @@ package com.prajaavaani.backend.service;
 import com.prajaavaani.backend.dto.AuthRequest;
 import com.prajaavaani.backend.dto.AuthResponse;
 import com.prajaavaani.backend.dto.VerifyOtpRequest;
+import com.prajaavaani.backend.exception.InvalidOtpException;
+import com.prajaavaani.backend.exception.OtpSendingFailedException;
 import com.prajaavaani.backend.model.UserEntity;
 import com.prajaavaani.backend.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
-// import org.springframework.security.authentication.BadCredentialsException; // Example specific exception
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
-import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor // Lombok constructor injection for final fields
 public class AuthServiceImpl implements AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
     private final UserRepository userRepository;
-    private final OtpService otpService; 
-    private final JwtService jwtService; // Inject JwtService
+    private final OtpService otpService;
+    private final JwtService jwtService;
+
+    public AuthServiceImpl(UserRepository userRepository, OtpService otpService, JwtService jwtService) {
+        this.userRepository = userRepository;
+        this.otpService = otpService;
+        this.jwtService = jwtService;
+    }
 
     @Override
     public void requestOtp(AuthRequest authRequest) {
@@ -40,52 +46,56 @@ public class AuthServiceImpl implements AuthService {
             log.error("Failed to send OTP for mobile number {}: {}", authRequest.getMobileNumber(), e.getMessage());
             // Depending on requirements, might want to clear the stored OTP if sending failed critically
             // Or throw a custom exception like OtpSendingFailedException
-            throw new RuntimeException("Failed to send OTP. Please try again later.", e); 
+            throw new OtpSendingFailedException("Failed to send OTP. Please try again later.");
         }
     }
 
     @Override
+    @Transactional
     public AuthResponse verifyOtp(VerifyOtpRequest verifyOtpRequest) {
-        log.info("Verifying OTP for mobile number: {}", verifyOtpRequest.getMobileNumber());
+        String mobileNumber = verifyOtpRequest.getMobileNumber();
 
-        // 1. Validate OTP using OtpService
-        boolean isValid = otpService.validateOtp(verifyOtpRequest.getMobileNumber(), verifyOtpRequest.getOtpCode());
-
-        if (!isValid) {
-            log.warn("Invalid OTP provided for {}", verifyOtpRequest.getMobileNumber());
-            // Throw an appropriate exception for invalid OTP
-            // Example: throw new BadCredentialsException("Invalid OTP provided.");
-            throw new RuntimeException("Invalid OTP"); // Placeholder
+        // 1. Validate mobile number format
+        if (!isValidMobileNumber(mobileNumber)) {
+            throw new InvalidOtpException("Invalid mobile number format.");
         }
 
-        // OTP is valid, proceed to find or create user
-        UserEntity user = userRepository.findByMobileNumber(verifyOtpRequest.getMobileNumber())
-                .orElseGet(() -> {
-                    // User doesn't exist, create a new one
-                    log.info("Creating new user for mobile number: {}", verifyOtpRequest.getMobileNumber());
-                    UserEntity newUser = new UserEntity();
-                    newUser.setMobileNumber(verifyOtpRequest.getMobileNumber());
-                    // Set other default fields if necessary (e.g., isVerified = true)
-                    return userRepository.save(newUser);
-                });
-        
-        log.info("OTP verified successfully for user ID: {}", user.getId());
+        // 2. Validate OTP (exception thrown if invalid)
+        otpService.validateOtp(mobileNumber, verifyOtpRequest.getOtpCode());
 
-        // Generate JWT token using UserEntity (needs UserDetails implementation)
-        // For simplicity, we'll create a basic UserDetails on the fly.
-        // In a real app, you'd have a UserDetailsService bean.
-        org.springframework.security.core.userdetails.User userDetails = 
-            new org.springframework.security.core.userdetails.User(
-                user.getMobileNumber(), 
-                "", // Password field is not used in OTP auth but required by UserDetails
-                Collections.emptyList() // No specific authorities for this example
-            );
-            
-        String token = jwtService.generateToken(userDetails);
-        log.info("Generated JWT token for user {}", user.getMobileNumber());
+        // 3. Find or create user (handle race condition with transaction)
+        UserEntity user = userRepository.findByMobileNumber(mobileNumber).orElse(null);
+        if (user == null) {
+            user = new UserEntity();
+            user.setMobileNumber(mobileNumber);
+            user.setIsVerified(true);
+            user = userRepository.save(user);
+        } else if (!Boolean.TRUE.equals(user.getIsVerified())) {
+            user.setIsVerified(true);
+            user = userRepository.save(user);
+        }
 
-        // Return successful response with the token
-        AuthResponse response = new AuthResponse("Authentication successful", user.getId(), user.getMobileNumber(), token);
+        // 4. Build UserDetails (add roles if needed)
+        User userDetails = new User(user.getMobileNumber(), "", Collections.emptyList());
+        String jwtToken = jwtService.generateToken(userDetails);
+
+        // 5. Build response (optionally mask mobile number)
+        AuthResponse response = new AuthResponse();
+        response.setMessage("OTP verified successfully");
+        response.setUserId(user.getId());
+        response.setMobileNumber(maskMobileNumber(user.getMobileNumber()));
+        response.setJwtToken(jwtToken);
         return response;
+    }
+
+    private boolean isValidMobileNumber(String mobileNumber) {
+        // Example: Indian 10-digit numbers or E.164 format
+        return mobileNumber != null && (mobileNumber.matches("^\\+91\\d{10}$") || mobileNumber.matches("^\\d{10}$"));
+    }
+
+    private String maskMobileNumber(String mobileNumber) {
+        // Mask all but last 4 digits
+        if (mobileNumber == null || mobileNumber.length() < 4) return "****";
+        return "****" + mobileNumber.substring(mobileNumber.length() - 4);
     }
 }

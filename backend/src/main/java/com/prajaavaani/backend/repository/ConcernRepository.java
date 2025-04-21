@@ -27,7 +27,7 @@ public interface ConcernRepository extends JpaRepository<ConcernEntity, UUID> {
 
     // Example of a query to sort by calculated net votes directly (might need DB-specific functions)
     // This is a simplified example and might need adjustments for specific DBs like PostgreSQL
-    @Query("SELECT c FROM ConcernEntity c WHERE c.geographicLevel = :level AND c.locationIdentifier = :location ORDER BY (c.upvotes - c.downvotes) DESC")
+    @Query("SELECT c FROM ConcernEntity c WHERE c.geographicLevel = :level AND c.locationIdentifier = :location ORDER BY c.netVotes DESC")
     Page<ConcernEntity> findAndSortByNetVotes(
             @Param("level") GeographicLevel level,
             @Param("location") String location,

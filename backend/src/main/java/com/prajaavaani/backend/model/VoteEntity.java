@@ -38,6 +38,25 @@ public class VoteEntity {
     @CreationTimestamp
     private LocalDateTime timestamp;
 
+    public VoteType getVoteType() {
+        return voteType;
+    }
+    public void setVoteType(VoteType voteType) {
+        this.voteType = voteType;
+    }
+    public UserEntity getUser() {
+        return user;
+    }
+    public void setUser(UserEntity user) {
+        this.user = user;
+    }
+    public ConcernEntity getConcern() {
+        return concern;
+    }
+    public void setConcern(ConcernEntity concern) {
+        this.concern = concern;
+    }
+
     public enum VoteType {
         UPVOTE, DOWNVOTE
     }

@@ -1,11 +1,13 @@
 package com.prajaavaani.backend.service;
 
 import com.prajaavaani.backend.config.TwilioConfig;
+import com.prajaavaani.backend.exception.InvalidOtpException;
+import com.prajaavaani.backend.exception.OtpSendingFailedException;
 import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -17,11 +19,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 @Service
-@RequiredArgsConstructor
 public class OtpServiceImpl implements OtpService {
 
     private static final Logger log = LoggerFactory.getLogger(OtpServiceImpl.class);
     private final TwilioConfig twilioConfig;
+
+    public OtpServiceImpl(TwilioConfig twilioConfig) {
+        this.twilioConfig = twilioConfig;
+    }
 
     // !!! WARNING: In-memory storage - NOT suitable for production or multi-instance deployments !!!
     // Replace with Redis, Memcached, or database-backed storage for production.
@@ -65,59 +70,48 @@ public class OtpServiceImpl implements OtpService {
         //     log.warn("OTP expired or not found for key {}", key);
         //     otpCache.remove(key); // Clean up expired/invalid entry
         //     otpExpiryCache.remove(key);
-        //     return false;
+        //     throw new InvalidOtpException("OTP expired or not found");
         // }
 
         if (storedOtp != null && storedOtp.equals(otpToValidate)) {
             log.info("OTP validation successful for key {}", key);
-            // Remove OTP after successful validation (one-time use)
             otpCache.remove(key);
             // otpExpiryCache.remove(key);
             return true;
         } else {
             log.warn("OTP validation failed for key {}. Provided OTP did not match.", key);
-            // Optional: Implement attempt limits to prevent brute-force attacks
-            // Consider removing the OTP even on failure after N attempts
-             otpCache.remove(key); // Remove after failed attempt for this simple implementation
-             // otpExpiryCache.remove(key);
-            return false;
+            otpCache.remove(key); // Remove after failed attempt for this simple implementation
+            // otpExpiryCache.remove(key);
+            throw new InvalidOtpException("Invalid OTP provided.");
         }
     }
 
     @Override
     public void sendOtpSms(String mobileNumber, String otp) {
-         // Ensure mobile number starts with '+' and country code (e.g., +91 for India)
          String formattedMobileNumber = formatMobileNumber(mobileNumber);
          if (formattedMobileNumber == null) {
              log.error("Invalid mobile number format provided: {}", mobileNumber);
-             // Consider throwing a custom exception
-             return;
+             throw new OtpSendingFailedException("Invalid mobile number format.");
          }
+         String messageBody = "Your Prajaavaani verification code is: " + otp;
+         log.info("DEVELOPMENT MODE: Would send SMS to {} with message: {}", formattedMobileNumber, messageBody);
+         // Uncomment the following code when you have a valid Twilio account
+         /*
+         try {
+             Message message = Message.creator(
+                             new PhoneNumber(formattedMobileNumber), // To number
+                             new PhoneNumber(twilioConfig.getPhoneNumber()), // From Twilio number
+                             messageBody)
+                     .create();
 
-        // In development mode, just log the OTP instead of actually sending it
-        // This allows testing without a valid Twilio account
-        String messageBody = "Your Prajaavaani verification code is: " + otp;
-        log.info("DEVELOPMENT MODE: Would send SMS to {} with message: {}", formattedMobileNumber, messageBody);
-        
-        // Uncomment the following code when you have a valid Twilio account
-        /*
-        try {
-            Message message = Message.creator(
-                            new PhoneNumber(formattedMobileNumber), // To number
-                            new PhoneNumber(twilioConfig.getPhoneNumber()), // From Twilio number
-                            messageBody)
-                    .create();
+             log.info("OTP SMS sent successfully to {}. SID: {}", formattedMobileNumber, message.getSid());
 
-            log.info("OTP SMS sent successfully to {}. SID: {}", formattedMobileNumber, message.getSid());
-
-        } catch (Exception e) {
-            log.error("Failed to send OTP SMS to {}: {}", formattedMobileNumber, e.getMessage());
-            // Handle specific Twilio exceptions if needed (e.g., AuthenticationException, ApiException)
-            // Re-throw a custom exception or handle appropriately
-            throw new RuntimeException("Failed to send OTP SMS", e); // Example
-        }
-        */
-    }
+         } catch (Exception e) {
+             log.error("Failed to send OTP SMS to {}: {}", formattedMobileNumber, e.getMessage());
+             throw new OtpSendingFailedException("Failed to send OTP SMS");
+         }
+         */
+     }
 
     // Basic helper to ensure number is in E.164 format (e.g., +91XXXXXXXXXX)
     // Adapt this based on expected input format

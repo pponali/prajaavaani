@@ -40,6 +40,10 @@ public class ConcernEntity {
     @ColumnDefault("0")
     private Integer downvotes = 0;
 
+    @Column(nullable = false)
+    @ColumnDefault("0")
+    private Integer netVotes = 0;
+
     @Enumerated(EnumType.STRING) // Store enum name as string in DB
     @Column(nullable = false, length = 20)
     private GeographicLevel geographicLevel;
@@ -54,10 +58,80 @@ public class ConcernEntity {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    // Calculated property (not stored in DB, but useful in Java)
-    @Transient // Exclude from persistence
-    public Integer getNetVotes() {
-        return (this.upvotes != null ? this.upvotes : 0) - (this.downvotes != null ? this.downvotes : 0);
+    public void setAuthor(UserEntity author) {
+        this.author = author;
+    }
+
+    public void setAuthorName(String authorName) {
+        this.authorName = authorName;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public void setGeographicLevel(GeographicLevel geographicLevel) {
+        this.geographicLevel = geographicLevel;
+    }
+
+    public void setLocationIdentifier(String locationIdentifier) {
+        this.locationIdentifier = locationIdentifier;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public String getAuthorName() {
+        return authorName;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public int getUpvotes() {
+        return upvotes;
+    }
+
+    public int getDownvotes() {
+        return downvotes;
+    }
+
+    public int getNetVotes() {
+        return netVotes;
+    }
+
+    public GeographicLevel getGeographicLevel() {
+        return geographicLevel;
+    }
+
+    public String getLocationIdentifier() {
+        return locationIdentifier;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public UserEntity getAuthor() {
+        return author;
+    }
+
+    public void setNetVotes(Integer netVotes) {
+        this.netVotes = netVotes;
+    }
+
+    public void setUpvotes(int upvotes) {
+        this.upvotes = upvotes;
+    }
+
+    public void setDownvotes(int downvotes) {
+        this.downvotes = downvotes;
     }
 
     // Relationships (e.g., OneToMany with Votes) can be added later
